@@ -15,6 +15,6 @@ let package = Package(
     targets: [
         .target(
             name: "ARCL",
-            path: "Source/ARKit-CoreLocation")
+            path: "Sources/ARKit-CoreLocation")
     ]
 )
