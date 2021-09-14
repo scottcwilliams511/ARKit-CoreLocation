@@ -36,11 +36,12 @@ public final class SceneLocationManager {
     weak var sceneLocationDelegate: SceneLocationManagerDelegate?
 
     public var locationEstimateMethod: LocationEstimateMethod = .mostRelevantEstimate
-    public let locationManager = LocationManager()
 
     var sceneLocationEstimates = [SceneLocationEstimate]()
 
     var updateEstimatesTimer: Timer?
+    
+    private var currentCLLocation: CLLocation?
 
     /// The best estimation of location that has been taken
     /// This takes into account horizontal accuracy, and the time at which the estimation was taken
@@ -59,7 +60,7 @@ public final class SceneLocationManager {
     }
 
     public var currentLocation: CLLocation? {
-        if locationEstimateMethod == .coreLocationDataOnly { return locationManager.currentLocation }
+        if locationEstimateMethod == .coreLocationDataOnly { return currentCLLocation }
 
         guard let bestEstimate = bestLocationEstimate,
             let position = sceneLocationDelegate?.scenePosition else { return nil }
@@ -67,12 +68,13 @@ public final class SceneLocationManager {
         return bestEstimate.translatedLocation(to: position)
     }
 
-    init() {
-        locationManager.delegate = self
-    }
-
     deinit {
         pause()
+    }
+    
+    func updateLocation(_ location: CLLocation) {
+        currentCLLocation = location;
+        addSceneLocationEstimate(location: location)
     }
 
     @objc
@@ -137,10 +139,4 @@ public extension SceneLocationManager {
     }
 }
 
-extension SceneLocationManager: LocationManagerDelegate {
 
-    func locationManagerDidUpdateLocation(_ locationManager: LocationManager,
-                                          location: CLLocation) {
-        addSceneLocationEstimate(location: location)
-    }
-}

@@ -208,6 +208,10 @@ public extension SceneLocationView {
         session.pause()
         sceneLocationManager.pause()
     }
+    
+    func updateLocation(_ location: CLLocation) {
+        sceneLocationManager.updateLocation(location)
+    }
 
     // MARK: True North
 

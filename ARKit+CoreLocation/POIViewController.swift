@@ -15,6 +15,10 @@ import UIKit
 @available(iOS 11.0, *)
 /// Displays Points of Interest in ARCL
 class POIViewController: UIViewController {
+    private var locationManager = CLLocationManager()
+    private(set) public var heading: CLLocationDirection?
+    private(set) public var headingAccuracy: CLLocationDirection?
+    
     @IBOutlet var mapView: MKMapView!
     @IBOutlet var infoLabel: UILabel!
     @IBOutlet weak var nodePositionLabel: UILabel!
@@ -56,6 +60,17 @@ class POIViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        self.locationManager = CLLocationManager()
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        self.locationManager.distanceFilter = kCLDistanceFilterNone
+        self.locationManager.headingFilter = kCLHeadingFilterNone
+        self.locationManager.pausesLocationUpdatesAutomatically = false
+        self.locationManager.delegate = self
+        self.locationManager.startUpdatingHeading()
+        self.locationManager.startUpdatingLocation()
+
+        self.locationManager.requestWhenInUseAuthorization()
 
         // swiftlint:disable:next discarded_notification_center_observer
         NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification,
@@ -158,6 +173,27 @@ class POIViewController: UIViewController {
                 }
             }
         }
+    }
+}
+
+extension POIViewController: CLLocationManagerDelegate {
+    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        locations.forEach {
+            sceneLocationView.updateLocation($0)
+        }
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        heading = newHeading.headingAccuracy >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+        headingAccuracy = newHeading.headingAccuracy
+    }
+
+    public func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool {
+        return true
     }
 }
 
@@ -341,8 +377,8 @@ extension POIViewController {
         }
 
 		if let eulerAngles = sceneLocationView.currentEulerAngles,
-			let heading = sceneLocationView.sceneLocationManager.locationManager.heading,
-			let headingAccuracy = sceneLocationView.sceneLocationManager.locationManager.headingAccuracy {
+			let heading = heading,
+			let headingAccuracy = headingAccuracy {
             let yDegrees = (((0 - eulerAngles.y.radiansToDegrees) + 360).truncatingRemainder(dividingBy: 360) ).short
 			infoLabel.text!.append(" Heading: \(yDegrees)° • \(Float(heading).short)° • \(headingAccuracy)°\n")
 		}
